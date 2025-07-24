@@ -8,7 +8,7 @@ import nest_asyncio
 nest_asyncio.apply()
 
 # Set the title of the Streamlit app
-st.title("🧠 Wavemark Connect(Port Forwarding)")
+st.title("🧠 Wavemark Connect")
 #API_URL = "http://127.0.0.1:8000/chat"  # Replace with your actual API URL
 API_URL = "https://vqwjjdsh-8000.use.devtunnels.ms/chat"  # Replace with your actual API URL
 
