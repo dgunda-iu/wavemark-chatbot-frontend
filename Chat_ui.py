@@ -11,7 +11,7 @@ nest_asyncio.apply()
 st.title("🧠 Wavemark Connect")
 #API_URL = "http://127.0.0.1:8000/chat"  # Replace with your actual API URL
 #API_URL = "https://vqwjjdsh-8000.use.devtunnels.ms/chat"  # Replace with your actual API URL
-API_URL="https://api.restful-api.dev/objects" #Test API URL for testing
+API_URL="https://jsonplaceholder.typicode.com/comments" #Test API URL for testing
 
 
 # Initialize chat history
@@ -29,15 +29,14 @@ async def fetch_bot_reply(prompt):
         async with httpx.AsyncClient() as client:
             response = await client.post(API_URL, json=
 {
-  "name": "Test Device",
-  "data": {
-    "type": "demo",
-    "status": "active"
-  }
+  "postId": 1,
+  "name": "Your Name",
+  "email": "your.email@example.com",
+  "body": "This is the content of the comment."
 }
 ,headers={"Content-Type": "application/json"}, timeout=100)
             response.raise_for_status()
-            return str(response.json())  #response.json().get("response", "No response from server")
+            return str(response.json())#return response.json().get("response", "No response from server")
     
     except httpx.RequestError as e:
         return f"Error contacting backend: {str(e)}"
@@ -71,7 +70,7 @@ async def handle_chat(prompt):
         animation_task = asyncio.create_task(typing_animation(typing_placeholder))
 
         # Fetch bot reply
-        bot_reply = str(await fetch_bot_reply(prompt))#await fetch_bot_reply(prompt)
+        bot_reply = await fetch_bot_reply(prompt)
 
         # Stop animation
         animation_task.cancel()
@@ -95,4 +94,3 @@ async def handle_chat(prompt):
 # Entry point for user input
 if prompt := st.chat_input("Type your message:"):
     asyncio.run(handle_chat(prompt))
-
