@@ -1,11 +1,16 @@
+
 import streamlit as st
-import requests
+import httpx
+import asyncio
+import itertools
+import nest_asyncio
 
-# Set the title of the Streamlit app
-st.title("🧠 Wavemark Connect")
+# Patch event loop for Streamlit compatibility
+nest_asyncio.apply()
 
-# Test API URL
-API_URL = "https://jsonplaceholder.typicode.com/comments"
+st.title("🧠 Wavemark Connect (Test API Mode)")
+
+API_URL = "https://api.restful-api.dev/objects"
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -16,28 +21,66 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Function to fetch bot reply using a simple GET request
-def fetch_bot_reply(prompt):
+# Async function to simulate bot reply using test API
+async def fetch_bot_reply(prompt):
     try:
-        response = requests.get(
-            API_URL,
-            headers={"User-Agent": "MyAppServiceClient/1.0"},
-            timeout=10
-        )
-        response.raise_for_status()
-        return str(response.json())
-    except requests.RequestException as e:
-        return f"Error: {str(e)}"
+        payload = {
+            "name": "Test Object",
+            "data": {
+                "message": prompt
+            }
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(API_URL, json=payload, timeout=30)
+            response.raise_for_status()
+            json_data = response.json()
+            return f"✅ Object created with ID: `{json_data.get('id')}`\n\n**Name:** {json_data.get('name')}\n**Data:** {json_data.get('data')}"
+    except httpx.RequestError as e:
+        return f"Error contacting backend: {str(e)}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Unexpected error: {type(e).__name__} - {str(e)}"
 
-# Handle user input
-if prompt := st.chat_input("Type your message:"):
+# Typing animation coroutine
+async def typing_animation(placeholder):
+    dots = itertools.cycle([".", "..", "..."])
+    try:
+        while True:
+            placeholder.markdown(f"{next(dots)}")
+            await asyncio.sleep(0.2)
+    except asyncio.CancelledError:
+        placeholder.empty()
+
+# Main async handler
+async def handle_chat(prompt):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    bot_reply = fetch_bot_reply(prompt)
-
     with st.chat_message("assistant"):
-        st.markdown(bot_reply[:500])  # Limit the response length for display
+        typing_placeholder = st.empty()
+        response_placeholder = st.empty()
 
-    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+        animation_task = asyncio.create_task(typing_animation(typing_placeholder))
+        bot_reply = await fetch_bot_reply(prompt)
+        animation_task.cancel()
+        try:
+            await animation_task
+        except asyncio.CancelledError:
+            pass
+
+        streamed_text = ""
+        chunk_size = 5
+        delay = 0.01
+
+        for i in range(0, len(bot_reply), chunk_size):
+            streamed_text += bot_reply[i:i+chunk_size]
+            response_placeholder.markdown(streamed_text)
+            await asyncio.sleep(delay)
+
+        st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+
+# Entry point for user input
+if prompt := st.chat_input("Type your message:"):
+    asyncio.run(handle_chat(prompt))
