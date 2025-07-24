@@ -27,14 +27,14 @@ for message in st.session_state.messages:
 async def fetch_bot_reply(prompt):
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(API_URL, json=
-{
-  "postId": 1,
-  "name": "Your Name",
-  "email": "your.email@example.com",
-  "body": "This is the content of the comment."
-}
-,headers={"Content-Type": "application/json"}, timeout=100)
+            
+            response = await client.get(
+                            API_URL,
+                            #params={"_limit": 5},  # Example parameter to limit results
+                            headers={"User-Agent": "MyAppServiceClient/1.0"},
+                            timeout=100
+                        )
+
             response.raise_for_status()
             return str(response.json())#return response.json().get("response", "No response from server")
     
@@ -84,7 +84,7 @@ async def handle_chat(prompt):
         chunk_size = 5
         delay = 0.01
 
-        for i in range(0, len(bot_reply), chunk_size):
+        for i in range(0, 500, chunk_size):
             streamed_text += bot_reply[i:i+chunk_size]
             response_placeholder.markdown(streamed_text)
             await asyncio.sleep(delay)
