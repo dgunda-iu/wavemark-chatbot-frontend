@@ -1,4 +1,3 @@
-
 import streamlit as st
 import httpx
 import asyncio
@@ -8,9 +7,10 @@ import nest_asyncio
 # Patch event loop for Streamlit compatibility
 nest_asyncio.apply()
 
-st.title("🧠 Wavemark Connect (Test API Mode)")
-
-API_URL = "https://api.restful-api.dev/objects"
+# Set the title of the Streamlit app
+st.title("🧠 Wavemark Connect")
+#API_URL = "http://127.0.0.1:8000/chat"  # Replace with your actual API URL
+API_URL = "https://vqwjjdsh-8000.use.devtunnels.ms/chat"  # Replace with your actual API URL
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -21,26 +21,21 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Async function to simulate bot reply using test API
+# Async function to fetch bot reply
 async def fetch_bot_reply(prompt):
     try:
-        payload = {
-            "name": "Test Object",
-            "data": {
-                "message": prompt
-            }
-        }
         async with httpx.AsyncClient() as client:
-            response = await client.post(API_URL, json=payload, timeout=30)
+            response = await client.post(API_URL, json={"message": prompt},headers={"Content-Type": "application/json"}, timeout=100)
             response.raise_for_status()
-            json_data = response.json()
-            return f"✅ Object created with ID: `{json_data.get('id')}`\n\n**Name:** {json_data.get('name')}\n**Data:** {json_data.get('data')}"
+            return response.json().get("response", "No response from server")
+    
     except httpx.RequestError as e:
         return f"Error contacting backend: {str(e)}"
     except httpx.HTTPStatusError as e:
         return f"HTTP error: {e.response.status_code} - {e.response.text}"
     except Exception as e:
         return f"Unexpected error: {type(e).__name__} - {str(e)}"
+
 
 # Typing animation coroutine
 async def typing_animation(placeholder):
@@ -62,14 +57,20 @@ async def handle_chat(prompt):
         typing_placeholder = st.empty()
         response_placeholder = st.empty()
 
+        # Start typing animation in background
         animation_task = asyncio.create_task(typing_animation(typing_placeholder))
+
+        # Fetch bot reply
         bot_reply = await fetch_bot_reply(prompt)
+
+        # Stop animation
         animation_task.cancel()
         try:
             await animation_task
         except asyncio.CancelledError:
             pass
 
+        # Stream the bot reply character by character
         streamed_text = ""
         chunk_size = 5
         delay = 0.01
