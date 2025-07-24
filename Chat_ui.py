@@ -40,9 +40,10 @@ async def fetch_bot_reply(prompt):
 # Typing animation coroutine
 async def typing_animation(placeholder):
     dots = itertools.cycle([".", "..", "..."])
+    
     try:
         while True:
-            placeholder.markdown(f"{next(dots)}")
+            placeholder.markdown(f"Okay, I am thinking{next(dots)}")
             await asyncio.sleep(0.2)
     except asyncio.CancelledError:
         placeholder.empty()
