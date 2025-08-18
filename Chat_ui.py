@@ -10,7 +10,8 @@ nest_asyncio.apply()
 # Set the title of the Streamlit app
 st.title("🧠 Wavemark Connect")
 #API_URL = "http://127.0.0.1:8000/chat"  # Replace with your actual API URL
-API_URL = "https://vqwjjdsh-8000.use.devtunnels.ms/chat"  # Replace with your actual API URL
+#API_URL = "https://vqwjjdsh-8000.use.devtunnels.ms/chat"  # Replace with your actual API URL
+API_URL = "https://wavemark-chatbot-backend-microservice-app-c0f5a0crhwbtd3eg.eastus2-01.azurewebsites.net/chat"
 
 # Initialize chat history
 if "messages" not in st.session_state:
